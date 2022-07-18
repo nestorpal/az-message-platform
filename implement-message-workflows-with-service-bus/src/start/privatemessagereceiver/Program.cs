@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
@@ -8,8 +8,8 @@ namespace privatemessagereceiver
     class Program
     {
 
-        const string ServiceBusConnectionString = "";
-        const string QueueName = "salesmessages";
+        const string ServiceBusConnectionString = "Endpoint=sb://nestpalsbustest.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=DpyzOE1JVlpbyIkByIhGF3mdCWD54PuNTkHGO1SdLWA=";
+        const string QueueName = "OrdersQueue";
 
         static void Main(string[] args)
         {
@@ -27,19 +27,29 @@ namespace privatemessagereceiver
 
 
             // Create a Service Bus client that will authenticate using a connection string
+            var client = new ServiceBusClient(ServiceBusConnectionString);
 
             // Create the options to use for configuring the processor
+            var processorOptions = new ServiceBusProcessorOptions
+            {
+                MaxConcurrentCalls = 1,
+                AutoCompleteMessages = false
+            };
 
             // Create a processor that we can use to process the messages
+            await using ServiceBusProcessor processor = client.CreateProcessor(QueueName, processorOptions);
 
             // Configure the message and error handler to use
+            processor.ProcessMessageAsync += MessageHandler;
+            processor.ProcessErrorAsync += ErrorHandler;
 
             // Start processing
+            await processor.StartProcessingAsync();
 
             Console.Read();
 
             // Close the processor here
-
+            await processor.CloseAsync();
         }
 
         // handle received messages
